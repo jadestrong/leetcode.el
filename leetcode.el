@@ -95,22 +95,22 @@ The elements of :problems has attributes:
 (defconst leetcode--result-buffer-name      "*leetcode-result*")
 
 (defface leetcode-checkmark-face
-  '((t (:foreground "#5CB85C")))
+  '((t :foreground "#5CB85C"))
   "Face for `leetcode--checkmark'"
   :group 'leetcode)
 
 (defface leetcode-easy-face
-  '((t (:foreground "#5CB85C")))
+  '((t :foreground "#5CB85C"))
   "Face for easy problems."
   :group 'leetcode)
 
 (defface leetcode-medium-face
-  '((t (:foreground "#F0AD4E")))
+  '((t :foreground "#F0AD4E"))
   "Face for medium problems."
   :group 'leetcode)
 
 (defface leetcode-hard-face
-  '((t (:foreground "#D9534E")))
+  '((t :foreground "#D9534E"))
   "Face for hard problems."
   :group 'leetcode)
 
@@ -124,7 +124,7 @@ The elements of :problems has attributes:
 (defconst leetcode--User-Agent       '("User-Agent" .
                                        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:66.0) Gecko/20100101 Firefox/66.0"))
 (defconst leetcode--X-Requested-With '("X-Requested-With" . "XMLHttpRequest"))
-(defconst leetcode--X-CSRFToken      "X-CSRFToken")
+(defconst leetcode--X-CSRFToken      "x-csrftoken")
 
 ;; API
 (defconst leetcode--api-root                (concat leetcode--base-url "/api"))
@@ -189,24 +189,44 @@ VALUE should be the referer."
     ("content-type" . "")))
 
 (defun leetcode--login ()
-  "Send login request and return a deferred object.
+  "Send login request and return a defered object.
 When ACCOUNT or PASSWORD is empty string it will show a prompt."
   (leetcode--loading-mode t)
-  (let ((my-cookies (executable-find "my_cookies")))
-    (set-process-filter
-     (start-process "my_cookies" nil "my_cookies")
-     (lambda (proc string)
-       (let* ((cookies-list (seq-filter
-                             (lambda (s) (not (string-empty-p s)))
-                             (split-string string "\n")))
-              (cookies-pairs (seq-map
-                              (lambda (s) (split-string s))
-                              cookies-list))
-              (leetcode-session (cadr (assoc "LEETCODE_SESSION" cookies-pairs)))
-              (leetcode-csrftoken (cadr (assoc "csrftoken" cookies-pairs))))
-         (url-cookie-store "LEETCODE_SESSION" leetcode-session nil leetcode--domain "/" t)
-         (url-cookie-store "csrftoken" leetcode-csrftoken nil leetcode--domain "/" t)))))
+  (let* ((cookie (car (process-lines "browsercookies" "--domain" "leetcode.com")))
+         (cookies-list (seq-filter
+                        (lambda (s) (not (string-empty-p s)))
+                        (seq-map
+                         (lambda (s) (string-trim s))
+                         (split-string cookie ";"))))
+         (cookies-pairs (seq-map
+                         (lambda (s) (split-string s "=")) cookies-list))
+         (leetcode-session (cadr (assoc "LEETCODE_SESSION" cookies-pairs)))
+         (leetcode-csrftoken (cadr (assoc "csrftoken" cookies-pairs))))
+    ;; (message "leetcode-session: %s , leetcode-csrftoken: %s" leetcode-session leetcode-csrftoken)
+    (url-cookie-store "LEETCODE_SESSION" leetcode-session nil leetcode--domain "/" t)
+    (url-cookie-store "csrftoken" leetcode-csrftoken nil leetcode--domain "/" t))
   (leetcode--loading-mode -1))
+
+;; (defun leetcode--login ()
+;;   "Send login request and return a deferred object.
+;; When ACCOUNT or PASSWORD is empty string it will show a prompt."
+;;   (leetcode--loading-mode t)
+;;   (let ((my-cookies (executable-find "my_cookies")))
+;;     (set-process-filter
+;;      (start-process "my_cookies" nil "my_cookies")
+;;      (lambda (proc string)
+;;        (message "cookie: %s" string)
+;;        (let* ((cookies-list (seq-filter
+;;                              (lambda (s) (not (string-empty-p s)))
+;;                              (split-string string "\n")))
+;;               (cookies-pairs (seq-map
+;;                               (lambda (s) (split-string s))
+;;                               cookies-list))
+;;               (leetcode-session (cadr (assoc "LEETCODE_SESSION" cookies-pairs)))
+;;               (leetcode-csrftoken (cadr (assoc "csrftoken" cookies-pairs))))
+;;          (url-cookie-store "LEETCODE_SESSION" leetcode-session nil leetcode--domain "/" t)
+;;          (url-cookie-store "csrftoken" leetcode-csrftoken nil leetcode--domain "/" t)))))
+;;   (leetcode--loading-mode -1))
 
 (defun leetcode--login-p ()
   "Whether user is login."
@@ -270,6 +290,7 @@ USER-AND-PROBLEMS is an alist comes from
               (push .slug cur-tags)
               (plist-put problem :tags cur-tags))))))
     ;; set leetcode--all-tags
+    (setq leetcode--all-tags nil)
     (dolist (topic (to-list .topics))
       (let-alist topic
         (unless (member topic leetcode--all-tags)
@@ -489,13 +510,15 @@ Return a list of rows, each row is a vector:
 (aio-defun leetcode-refresh-fetch ()
   "Refresh problems and update `tabulated-list-entries'."
   (interactive)
+  (unless (leetcode--login-p)
+    (leetcode--login))
   (if-let ((users-and-problems (aio-await (leetcode--fetch-user-and-problems)))
            (all-tags (aio-await (leetcode--fetch-all-tags))))
       (progn
         (leetcode--set-user-and-problems users-and-problems)
         (leetcode--set-tags all-tags))
     (message "LeetCode parse user and problems failed"))
-  (leetcode-reset-filter)
+  ;; (leetcode-reset-filter)
   (leetcode-refresh))
 
 (aio-defun leetcode--async ()
@@ -523,6 +546,8 @@ see: https://github.com/skeeto/emacs-aio/issues/3."
 (aio-defun leetcode-try ()
   "Asynchronously test the code using customized testcase."
   (interactive)
+  (unless (leetcode--login-p)
+    (leetcode--login))
   (leetcode--loading-mode t)
   (let* ((code-buf (current-buffer))
          (testcase-buf (get-buffer leetcode--testcase-buffer-name))
@@ -712,14 +737,17 @@ following possible value:
        ((eq .status_code 20)
         (insert "\n\n")
         (insert (format (alist-get 'full_compile_error submission-detail)))))
-      (display-buffer (current-buffer)
-                      '((display-buffer-reuse-window
-                         leetcode--display-result)
-                        (reusable-frames . visible))))))
+      ;; (display-buffer (current-buffer)
+      ;;                 '((display-buffer-reuse-window
+      ;;                    leetcode--display-result)
+      ;;                   (reusable-frames . visible)))
+      (leetcode--display-result (current-buffer)))))
 
 (aio-defun leetcode-submit ()
   "Asynchronously submit the code and show result."
   (interactive)
+  (unless (leetcode--login-p)
+    (leetcode--login))
   (leetcode--loading-mode t)
   (let* ((code-buf (current-buffer))
          (code (leetcode--buffer-content code-buf))
@@ -774,6 +802,7 @@ following possible value:
 Get current entry by using `tabulated-list-get-entry' and use
 `shr-render-buffer' to render problem description."
   (interactive)
+  ;; (delete-other-windows)
   (let* ((entry (tabulated-list-get-entry))
          (pos (aref entry 1))
          (title (aref entry 2))
@@ -790,7 +819,7 @@ Get current entry by using `tabulated-list-get-entry' and use
                         "likes: " (number-to-string .likes) html-margin
                         "dislikes: " (number-to-string .dislikes)))
         (insert .content)
-        (setq shr-current-font t)
+        (setq shr-current-font nil)
         (leetcode--replace-in-buffer "" "")
         ;; NOTE: shr.el can't render "https://xxxx.png", so we use "http"
         (leetcode--replace-in-buffer "https" "http")
@@ -902,16 +931,20 @@ for current problem."
   (with-current-buffer (get-buffer-create leetcode--testcase-buffer-name)
     (erase-buffer)
     (insert testcase)
-    (display-buffer (current-buffer)
-                    '((display-buffer-reuse-window
-                       leetcode--display-testcase)
-                      (reusable-frames . visible))))
+    (leetcode--display-testcase (current-buffer))
+    ;; (display-buffer (current-buffer)
+    ;;                 '((display-buffer-reuse-window
+    ;;                    leetcode--display-testcase)
+    ;;                   (reusable-frames . visible)))
+    )
   (with-current-buffer (get-buffer-create leetcode--result-buffer-name)
     (erase-buffer)
-    (display-buffer (current-buffer)
-                    '((display-buffer-reuse-window
-                       leetcode--display-result)
-                      (reusable-frames . visible)))))
+    ;; (display-buffer (current-buffer)
+    ;;                 '((display-buffer-reuse-window
+    ;;                    leetcode--display-result)
+    ;;                   (reusable-frames . visible)))
+    (leetcode--display-result (current-buffer)))
+  )
 
 (defvar leetcode--problems-mode-map
   (let ((map (make-sparse-keymap)))
@@ -932,7 +965,7 @@ for current problem."
   tabulated-list-mode "LC Problems"
   "Major mode for browsing a list of problems."
   (setq tabulated-list-padding 2)
-  (add-hook 'tabulated-list-revert-hook #'leetcode-problems-refresh nil t)
+  (add-hook 'tabulated-list-revert-hook #'leetcode-refresh-fetch nil t)
   :group 'leetcode)
 
 (add-hook 'leetcode--problems-mode-hook #'hl-line-mode)

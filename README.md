@@ -8,7 +8,15 @@ LeetCode brings you offer, and now Emacs brings you LeetCode!
 - Vanilla Emacs: `package-install` it from melpa directly
 - [Spacemacs](https://github.com/syl20bnr/spacemacs): [leetcode-emacs-layer](https://github.com/anmoljagetia/leetcode-emacs-layer)
 
-LeetCode do not allow third party login, one workaround is restore LeetCode session from local Chrome cookies. To do this, you need to install a Python3 package called [my\_cookies](https://github.com/kaiwk/my_cookies): `pip3 install my_cookies`
+~~LeetCode do not allow third party login, one workaround is restore LeetCode session from local Chrome cookies. To do this, you need to install a Python3 package called [my\_cookies](https://github.com/kaiwk/my_cookies): `pip3 install my_cookies`~~
+
+LeetCode do not allow third party loading, one workaround is restore LeetCode session from local FireFox cookies.
+To do ths, you need to install my Rust package called [browsercookie-rs](https://github.com/jadestrong/browsercookie-rs):
+
+1. `git clone https://github.com/jadestrong/browsercookie-rs.git`
+2. `cargo install --path . `
+
+NOTE: You also need install FireFox browser, and login your leetcode accound.
 
 ## Manually
 
