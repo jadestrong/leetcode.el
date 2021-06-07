@@ -3,10 +3,56 @@
 
 LeetCode brings you offer, and now Emacs brings you LeetCode!
 
+# Usage
+
+![screencast](images/screencast.gif)
+
+1. Execute `leetcode` command, and in problem list buffer:
+
+| Keymap | Description                            |
+|--------|----------------------------------------|
+| n      | cursor move down                       |
+| p      | cursor move up                         |
+| l      | change prefer language                 |
+| s      | filter problems by regex               |
+| t      | filter problems by tag                 |
+| d      | filter problems by difficulty          |
+| /      | clear filters                          |
+| g      | refresh without fetching from LeetCode |
+| G      | refresh all data                       |
+| RET    | show current problem description       |
+| TAB    | view current problem description       |
+
+More advanced navigation hotkeys can be found [here](#advanced-navigation).
+
+2. Press `<RET>`, show problem description, move cursor to "solve it", press
+   `<RET>` again, start coding!
+
+3. After finishing your code, you can edit testcase and execute `leetcode-try`
+   or execute `leetcode-submit`.
+
+![leetcode-submit](images/leetcode-submit.png)
+
+## Advanced Navigation
+
+Here are some advanced navigation hotkeys that may be useful in problem list buffer:
+
+| Keymap | Command                                    | Description                         |
+|--------|--------------------------------------------|-------------------------------------|
+| o      | `leetcode-show-problem`                    | show/open the current problem       |
+| O      | `leetcode-show-current-problem`            | show/open a problem by id           |
+| v      | `leetcode-view-problem`                    | view the current problem            |
+| V      | `leetcode-view-current-problem`            | view a problem by id                |
+| b      | `leetcode-show-problem-in-browser`         | show the current problem in browser |
+| B      | `leetcode-show-current-problem-in-browser` | show a problem by id in browser     |
+| c      | `leetcode-solve-problem`                   | start coding the current problem    |
+| C      | `leetcode-solve-current-problem`           | start coding a problem by id        |
+
 # Installation
 
 - Vanilla Emacs: `package-install` it from melpa directly
-- [Spacemacs](https://github.com/syl20bnr/spacemacs): [leetcode-emacs-layer](https://github.com/anmoljagetia/leetcode-emacs-layer)
+- [Spacemacs](https://github.com/syl20bnr/spacemacs):
+  [leetcode-emacs-layer](https://github.com/anmoljagetia/leetcode-emacs-layer)
 
 ~~LeetCode do not allow third party login, one workaround is restore LeetCode session from local Chrome cookies. To do this, you need to install a Python3 package called [my\_cookies](https://github.com/kaiwk/my_cookies): `pip3 install my_cookies`~~
 
@@ -26,54 +72,28 @@ NOTE: You also need install FireFox browser, and login your leetcode accound.
 
 # Configuration
 
-You can set your preferred LeetCode programming language and SQL by setting `leetcode-prefer-language` and `leetcode-prefer-sql`:
+You can set your preferred LeetCode programming language and SQL by setting
+`leetcode-prefer-language` and `leetcode-prefer-sql`:
 
 ```elisp
 (setq leetcode-prefer-language "python3")
 (setq leetcode-prefer-sql "mysql")
 ```
 
-All supported languages can be found in variable `leetcode--prefer-language-suffixes`.
+All supported languages can be found in variable
+`leetcode--lang-suffixes`.
 
-# Usage
+You can save solution by setting `leetcode-save-solutions`:
 
-1. Execute `leetcode` command.
-
-![leetcode](images/leetcode.png)
-
-In leetcode problems list buffer:
-
-| keymap | command                                |
-|--------|----------------------------------------|
-| n      | cursor move down                       |
-| p      | cursor move up                         |
-| s      | filter problem by regex                |
-| t      | filter problem by tag                  |
-| /      | clear filters                          |
-| g      | refresh without fetching from LeetCode |
-| G      | refresh all data                       |
-| RET    | show current problem description       |
-
-2. Press `<RET>`, show problem description, move cursor to "solve it", press `<RET>` again, start coding!
-
-3. After finishing your code, you can edit testcase and execute `leetcode-try` or execute `leetcode-submit`.
-
-![leetcode-submit](images/leetcode-submit.png)
+```elisp
+(setq leetcode-save-solutions t)
+(setq leetcode-directory "~/leetcode")
+```
 
 # Debug
 
-If you are unable to start Leetcode, set these variables and try again to see a full stacktrace:
-
-```elisp
-(setq url-debug t)
-```
+Call `leetcode-toggle-debug`, log will output in `*leetcode-log*` buffer.
 
 # Contributing
 
-This package use [Cask](https://cask.readthedocs.io/en/latest/guide/introduction.html) to develop, build and test.
-
-It is a suggestion for you to use `Cask`, but if you don't want to bother to use it, it's totally fine too.
-
-`Cask` is a build tools for emacs lisp, you can think it of `npm` for emacs lisp.
-
-Enter project root, execute `cask install`, this command will install all dependencies. After that, execute `cask emacs` which will start a emacs with extra `load-path` to load dependencies.
+Please submit PR to develop branch.
