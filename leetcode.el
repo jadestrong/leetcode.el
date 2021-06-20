@@ -79,9 +79,9 @@
 
 (defun leetcode--check-deps ()
   "Check if all dependencies installed."
-  (if (executable-find "my_cookies")
+  (if (executable-find "browsercookies")
       t
-    (leetcode--install-my-cookie)
+    (message "Need install browsercookies-rs: [https://github.com/jadestrong/browsercookie-rs]")
     nil))
 
 (defgroup leetcode nil
@@ -313,7 +313,7 @@ USER-AND-PROBLEMS is an alist comes from
                   (problems (make-vector len nil)))
              (dotimes (i len)
                (let-alist (aref .stat_status_pairs i)
-                 (aset problems (1- .stat.frontend_question_id)
+                 (aset problems (1- (- len i))
                        (list
                         :status .status
                         :id .stat.frontend_question_id
@@ -609,7 +609,7 @@ Return a list of rows, each row is a vector:
   "Refresh problems and update `tabulated-list-entries'."
   (interactive)
   (unless (leetcode--login-p)
-    (leetcode--login))
+    (aio-await (leetcode--login)))
   (if-let ((users-and-problems (aio-await (leetcode--fetch-user-and-problems)))
            (all-tags (aio-await (leetcode--fetch-all-tags))))
       (progn
@@ -655,7 +655,7 @@ LeetCode require slug-title as the request parameters."
   "Asynchronously test the code using customized testcase."
   (interactive)
   (unless (leetcode--login-p)
-    (leetcode--login))
+    (aio-await (leetcode--login)))
   (leetcode--loading-mode t)
   (let* ((code-buf (current-buffer))
          (testcase-buf (get-buffer leetcode--testcase-buffer-name))
@@ -862,7 +862,7 @@ following possible value:
   "Asynchronously submit the code and show result."
   (interactive)
   (unless (leetcode--login-p)
-    (leetcode--login))
+    (aio-await (leetcode--login)))
   (leetcode--loading-mode t)
   (let* ((code-buf (current-buffer))
          (code (leetcode--buffer-content code-buf))
