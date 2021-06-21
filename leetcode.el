@@ -1155,9 +1155,11 @@ major mode by `leetcode-prefer-language'and `auto-mode-alist'."
                                                leetcode--lang))
                                       snippets))
                    (template-code (alist-get 'code snippet)))
-              (unless (save-mark-and-excursion
-                        (goto-char (point-min))
-                        (search-forward (string-trim template-code) nil t))
+              (if
+                  (buffer-empty-p code-buf)
+                  ;; (save-mark-and-excursion
+                  ;;       (goto-char (point-min))
+                  ;;       (search-forward (string-trim template-code) nil t))
                 (insert template-code))
               (leetcode--replace-in-buffer "" ""))))
 
